@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 def get_files_info(working_directory, directory=None):
     # Maps the path to the working directory, and assigns it to directory
@@ -83,3 +84,50 @@ def write_file(working_directory, file_path, content):
         
     except Exception as e:
         return(f'Error creating file: {e}')
+    
+def run_python_file(working_directory, file_path):
+    # Maps the path to the working directory, and assigns it to file_path
+    abs_working_directory = os.path.abspath(working_directory)
+    target_file_path = abs_working_directory
+
+    # Joins the path of file_path (if it exists) to the working directory
+    if file_path:
+        target_file_path = os.path.abspath(os.path.join(working_directory, file_path))
+        
+    # Checks if file_path is inside the working directory
+    if not target_file_path.startswith(abs_working_directory):
+        return(f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory')
+
+    # Checks if the file exists
+    if not os.path.exists(target_file_path):
+        return(f'Error: File "{file_path}" not found.')
+    
+    # Checks if the file ends with ".py"
+    if not target_file_path.endswith(".py"):
+        return(f'Error: "{file_path}" is not a Python file.')
+        
+    # Execute the Python file
+    try:
+        result = subprocess.run(
+            ["python3", target_file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+            cwd=working_directory,
+            text=True
+        )
+
+        output = []
+        if result.stdout:
+            output.append(f'STDOUT: {result.stdout}')
+        if result.stderr:
+            output.append(f'STDERR: {result.stderr}')
+        if result.returncode != 0:
+            output.append(f'Process exited with code {result.returncode}')
+        if not output:
+            return "No output produced."
+        
+        return "\n".join(output)
+    
+    except Exception as e:
+        return f'Error: executing Python file: {e}'
