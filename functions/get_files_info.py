@@ -131,3 +131,10 @@ def run_python_file(working_directory, file_path):
     
     except Exception as e:
         return f'Error: executing Python file: {e}'
+    
+system_prompt = "I'M JUST A ROBOT"
+response = client.models.generate_content(
+    model=model_name,
+    contents=messages,
+    config=types.GenerateContentConfig(system_instruction=system_prompt)
+)
