@@ -16,6 +16,20 @@ schema_get_files_info = types.FunctionDeclaration(
     ),
 )
 
+schema_get_file_content = types.FunctionDeclaration(
+    name="get_file_content",
+    description="Reads out all content written within specified file.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file": types.Schema(
+                type=types.Type.STRING,
+                description="The file to read, relative to the working directory."
+            )
+        }
+    )
+)
+
 available_functions = types.Tool(
     function_declarations=[
         schema_get_files_info,
