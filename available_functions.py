@@ -30,6 +30,20 @@ schema_get_file_content = types.FunctionDeclaration(
     )
 )
 
+schema_run_python_file = types.FunctionDeclaration(
+    name="run_python_file",
+    description="Runs specified Python file.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file": types.Schema(
+                type=types.Type.STRING,
+                description="The Python file to be run, relative to the working directory."
+            )
+        }
+    )
+)
+
 available_functions = types.Tool(
     function_declarations=[
         schema_get_files_info,
