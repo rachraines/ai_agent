@@ -44,6 +44,24 @@ schema_run_python_file = types.FunctionDeclaration(
     )
 )
 
+schema_write_file = types.FunctionDeclaration(
+    name="write_file",
+    description="Creates file and writes content to it, or overwrites content to an existing file.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "file": types.Schema(
+                type=types.Type.STRING,
+                description="The file to be written to, relative to the working directory."
+            ),
+            "content": types.Schema(
+                type=types.Type.STRING,
+                description="The content to write into the file."
+            )
+        }
+    )
+)
+
 available_functions = types.Tool(
     function_declarations=[
         schema_get_files_info,
