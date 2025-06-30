@@ -20,14 +20,15 @@ def get_files_info(working_directory, directory=None):
         
     try:     
         # Reads and returns the contents of the directory
-        output_lines = []
-        for item in os.listdir(target_directory):
-            item_path = os.path.join(target_directory, item)
-            size = os.path.getsize(item_path)
-            is_dir = os.path.isdir(item_path)
-            output_lines.append (f'- {item}: file_size={size} bytes, is_dir={is_dir}')
+        files_info = []
+        for filename in os.listdir(target_directory):
+            filepath = os.path.join(target_directory, filename)
+            file_size = os.path.getsize(filepath)
+            is_dir = os.path.isdir(filepath)
+            files_info.append(
+                f'- {filename}: file_size={file_size} bytes, is_dir={is_dir}')
 
-        return '\n'.join(output_lines)
+        return '\n'.join(files_info)
     
     except Exception as e:
         return(f'Error listing files: {e}')
@@ -35,29 +36,28 @@ def get_files_info(working_directory, directory=None):
 def get_file_content(working_directory, file_path):
     # Maps the path to the working directory, and assigns it to file_path
     abs_working_directory = os.path.abspath(working_directory)
-    target_file_path = abs_working_directory
-
-    # Joins the path of file_path (if it exists) to the working directory
-    if file_path:
-        target_file_path = os.path.abspath(os.path.join(working_directory, file_path))
-        
+     # Joins the path of file_path (if it exists) to the working directory
+    abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
+    
     # Checks if file_path is inside the working directory
-    if not target_file_path.startswith(abs_working_directory):
+    if not abs_file_path.startswith(abs_working_directory):
         return(f'Error: Cannot read "{file_path}" as it is outside the permitted working directory')
         
     # Checks if the file exists and is a file
-    if not os.path.isfile(target_file_path):
+    if not os.path.isfile(abs_file_path):
         return(f'Error: File not found or is not a regular file: "{file_path}"')
 
     try:
         # Reads and returns contents of file up to 10000 chars
         max_chars = 10000
-        with open(target_file_path, "r") as f:
-            content = f.read()
+        with open(abs_file_path, "r") as f:
+            content = f.read(max_chars)
 
-        # Truncates the file if more than 10000 chars    
-        if len(content) > 10000:
-                return content[:10000] + f'[...File "{file_path}" truncated at 10000 characters]'
+            # Truncates the file if more than 10000 chars    
+            if os.path.getsize(abs_file_path) > max_chars:
+                content += (
+                    f'[...File "{file_path}" truncated at {max_chars} characters]'
+                )
         return content
     
     except Exception as e:
@@ -66,62 +66,66 @@ def get_file_content(working_directory, file_path):
 def write_file(working_directory, file_path, content):
     # Maps the path to the working directory, and assigns it to file_path
     abs_working_directory = os.path.abspath(working_directory)
-    target_file_path = abs_working_directory
-
     # Joins the path of file_path (if it exists) to the working directory
-    if file_path:
-        target_file_path = os.path.abspath(os.path.join(working_directory, file_path))
+    abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
         
     # Checks if file_path is inside the working directory
-    if not target_file_path.startswith(abs_working_directory):
+    if not abs_file_path.startswith(abs_working_directory):
         return(f'Error: Cannot write to "{file_path}" as it is outside the permitted working directory')
-        
-    try:
-        # Writes the file (creates if not exists, overwrites if it does)
-        with open(target_file_path, "w") as f:
-            f.write(content)
-        return f'Successfully wrote to "{target_file_path}" ({len(content)} characters written)'
-        
-    except Exception as e:
-        return(f'Error creating file: {e}')
     
-def run_python_file(working_directory, file_path):
+    if not os.path.exists(abs_file_path):  
+        try:
+            os.makedirs(os.path.dirname(abs_file_path), exist_ok=True)
+        except Exception as e:
+            return f"Error: creating directory: {e}"
+    
+    if os.path.exists(abs_file_path) and os.path.isdir(abs_file_path):
+        return f'Error: "{file_path}" is a directory, not a file'
+    try:
+        with open(abs_file_path, "w") as f:
+            f.write(content)
+        return (
+            f'Successfully wrote to "{file_path}" ({len(content)} characters written)'
+        )
+    except Exception as e:
+        return f"Error: writing to file: {e}"
+    
+def run_python_file(working_directory, file_path, args=None):
     # Maps the path to the working directory, and assigns it to file_path
     abs_working_directory = os.path.abspath(working_directory)
-    target_file_path = abs_working_directory
-
-    # Joins the path of file_path (if it exists) to the working directory
-    if file_path:
-        target_file_path = os.path.abspath(os.path.join(working_directory, file_path))
+        # Joins the path of file_path (if it exists) to the working directory
+    abs_file_path = os.path.abspath(os.path.join(working_directory, file_path))
         
     # Checks if file_path is inside the working directory
-    if not target_file_path.startswith(abs_working_directory):
+    if not abs_file_path.startswith(abs_working_directory):
         return(f'Error: Cannot execute "{file_path}" as it is outside the permitted working directory')
 
     # Checks if the file exists
-    if not os.path.exists(target_file_path):
+    if not os.path.exists(abs_file_path):
         return(f'Error: File "{file_path}" not found.')
     
     # Checks if the file ends with ".py"
-    if not target_file_path.endswith(".py"):
+    if not file_path.endswith(".py"):
         return(f'Error: "{file_path}" is not a Python file.')
         
     # Execute the Python file
     try:
+        commands = ["python", abs_file_path]
+        if args:
+            commands.extend(args)
         result = subprocess.run(
-            ["python3", target_file_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+            commands,
+            capture_output=True,
             timeout=30,
-            cwd=working_directory,
+            cwd=abs_working_directory,
             text=True
         )
 
         output = []
         if result.stdout:
-            output.append(f'STDOUT: {result.stdout}')
+            output.append(f'STDOUT:\n{result.stdout}')
         if result.stderr:
-            output.append(f'STDERR: {result.stderr}')
+            output.append(f'STDERR:{result.stderr}')
         if result.returncode != 0:
             output.append(f'Process exited with code {result.returncode}')
         if not output:
@@ -131,10 +135,3 @@ def run_python_file(working_directory, file_path):
     
     except Exception as e:
         return f'Error: executing Python file: {e}'
-    
-system_prompt = "I'M JUST A ROBOT"
-response = client.models.generate_content(
-    model=model_name,
-    contents=messages,
-    config=types.GenerateContentConfig(system_instruction=system_prompt)
-)
