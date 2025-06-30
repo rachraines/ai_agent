@@ -1,7 +1,7 @@
 from google.genai import types
 from available_functions import schema_get_file_content, schema_get_files_info, schema_run_python_file, schema_write_file, available_functions
 from functions.get_files_info import write_file, get_files_info, get_file_content, run_python_file
-
+from config import WORKING_DIR
 
 
     
