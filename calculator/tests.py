@@ -1,7 +1,6 @@
-# tests.py
-
 import unittest
 from pkg.calculator import Calculator
+import subprocess
 
 
 class TestCalculator(unittest.TestCase):
@@ -43,6 +42,10 @@ class TestCalculator(unittest.TestCase):
     def test_not_enough_operands(self):
         with self.assertRaises(ValueError):
             self.calculator.evaluate("+ 3")
+
+    def test_command_line_expression(self):
+        process = subprocess.run(['python', 'main.py', '3+7*2'], capture_output=True, text=True)
+        self.assertEqual(process.stdout.strip(), '3 + 7 * 2\n17.0')
 
 
 if __name__ == "__main__":

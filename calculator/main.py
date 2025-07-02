@@ -1,6 +1,7 @@
 import sys
 from pkg.calculator import Calculator
 from pkg.render import render
+import re
 
 
 def main():
@@ -12,10 +13,15 @@ def main():
         return
 
     expression = " ".join(sys.argv[1:])
+    #expression = "3+7*2" # Hardcoded expression for testing
+    expression = re.sub(r'([+\-*/])', r' \1 ', expression) # Add spaces around operators
+    expression = ' '.join(expression.split()) # remove duplicate spaces
+    print(expression)
     try:
         result = calculator.evaluate(expression)
-        to_print = render(expression, result)
-        print(to_print)
+        #to_print = render(expression, result)
+        #print(to_print)
+        print(result)
     except Exception as e:
         print(f"Error: {e}")
 
